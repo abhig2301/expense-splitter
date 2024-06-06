@@ -1,24 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Expense Splitter</title>
+    <title>Expense Splitter - Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Calibri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            font-family: 'Calibri', sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        .title {
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+            display: block;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            width: calc(100% - 16px);
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .submit-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .submit-button:hover {
+            background-color: #1565c0;
+        }
+
+        .home-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .home-button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Expense Splitter</h1>
-    <form id="homeForm">
-        <label for="numFriends">Number of Friends:</label>
-        <input type="number" id="numFriends" min="1" required><br><br>
-        <label for="totalAmount">Total Bill Amount:</label>
-        <input type="number" id="totalAmount" step="0.01" required><br><br>
-        <button type="button" onclick="redirectToItem()">Next</button>
+    <div class="title">Expense Splitter</div>
+    <h1>Enter Details</h1>
+    <form id="friendForm">
+        <div class="input-group">
+            <label for="totalAmount">Total Amount:</label>
+            <input type="number" id="totalAmount" min="0" step="0.01" required>
+        </div>
+        <div class="input-group">
+            <label for="numFriends">Number of Friends:</label>
+            <input type="number" id="numFriends" min="1" required>
+        </div>
+        <div id="friendInitials"></div>
+        <button type="button" class="submit-button" onclick="redirectToItem()">Next</button>
     </form>
+    <button class="home-button" onclick="redirectToIndex()">Home</button>
+
     <script>
         function redirectToItem() {
-            var numFriends = document.getElementById("numFriends").value;
             var totalAmount = document.getElementById("totalAmount").value;
-            var queryParams = "?numFriends=" + numFriends + "&totalAmount=" + totalAmount;
+            var numFriends = document.getElementById("numFriends").value;
+            var friendInitials = [];
+            for (var i = 1; i <= numFriends; i++) {
+                var initial = document.getElementById("friend" + i).value.toUpperCase();
+                friendInitials.push(initial);
+            }
+            var queryParams = "?totalAmount=" + totalAmount + "&numFriends=" + numFriends + "&friendInitials=" + friendInitials.join(",");
             window.location.href = "item.html" + queryParams;
         }
+
+        function redirectToIndex() {
+            window.location.href = "index.html";
+        }
+
+        function generateFriendInputs(numFriends) {
+            var friendInputsHTML = "";
+            for (var i = 1; i <= numFriends; i++) {
+                friendInputsHTML += '<div class="input-group"><label for="friend' + i + '">Friend ' + i + ':</label>';
+                friendInputsHTML += '<input type="text" id="friend' + i + '" required></div>';
+            }
+            document.getElementById("friendInitials").innerHTML = friendInputsHTML;
+        }
+
+        document.getElementById("numFriends").addEventListener("change", function() {
+            var numFriends = parseInt(this.value);
+            generateFriendInputs(numFriends);
+        });
     </script>
 </body>
 </html>

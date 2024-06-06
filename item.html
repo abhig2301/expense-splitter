@@ -1,62 +1,212 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Expense Splitter</title>
+    <title>Expense Splitter - Item</title>
+    <style>
+        body {
+            background-color: white;
+            font-family: Calibri, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .item-input {
+            margin-bottom: 20px;
+        }
+
+        .submit-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #90caf9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            color: white;
+        }
+
+        .show-list-button,
+        .home-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #42a5f5;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            color: white;
+        }
+
+        .tax-input {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Expense Splitter</h1>
-    <h2>Enter Item Details</h2>
+    <h1>Enter Item Details</h1>
     <form id="itemForm">
-        <label for="itemName">Item Name (Optional):</label>
-        <input type="text" id="itemName"><br><br>
-        <label for="itemPrice">Item Price:</label>
-        <input type="number" id="itemPrice" step="0.01" required><br><br>
-        <label for="tax">Tax Percentage:</label>
-        <select id="tax">
-            <option value="2">2%</option>
-            <option value="7.25">7.25%</option>
-            <option value="custom">Custom</option>
-        </select><br><br>
-        <label for="includedFriends">Included Friends:</label>
-        <input type="text" id="includedFriends"><br><br>
-        <button type="button" onclick="addNewItem()">Add New Item</button>
-        <button type="button" onclick="calculateSplit()">Calculate</button>
+        <div class="item-input">
+            <label for="itemName">Item Name:</label>
+            <input type="text" id="itemName">
+        </div>
+        <div class="item-input">
+            <label for="itemPrice">Item Price:</label>
+            <input type="number" id="itemPrice" step="0.01" required>
+        </div>
+        <div class="item-input">
+            <label for="tax">Tax Percentage:</label>
+            <select id="tax" onchange="toggleCustomTax()">
+                <option value="2">2%</option>
+                <option value="7.25">7.25%</option>
+                <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="customTax" class="tax-input" step="0.01" placeholder="Enter custom tax">
+        </div>
+        <div class="item-input">
+            <label for="includedFriends">Included Friends:</label>
+            <select id="includedFriends" multiple required>
+                <!-- Options will be dynamically added here -->
+            </select>
+        </div>
+        <button type="button" class="submit-button" onclick="addNewItem()">Add New Item</button>
+        <button type="button" class="submit-button" onclick="calculateSplit()">Calculate</button>
     </form>
 
+    <!-- Show List Button -->
+    <button class="show-list-button" onclick="openItemListWindow()">Show List</button>
+
+    <button class="home-button" onclick="redirectToIndex()">Home</button>
+
+    <div id="itemListContainer" class="item-list-container" style="display: none;"></div>
+
     <script>
-        // Array to store item details
+        // Retrieve query parameters from URL
+        var urlParams = new URLSearchParams(window.location.search);
+        var numFriends = urlParams.get('numFriends');
+        var friendInitials = urlParams.get('friendInitials').split(",");
+
+        // Generate options for included friends dropdown
+        function generateFriendOptions() {
+            var friendOptionsHTML = "";
+            for (var i = 0; i < numFriends; i++) {
+                friendOptionsHTML += '<option value="' + friendInitials[i] + '">' + friendInitials[i] + '</option>';
+            }
+            document.getElementById("includedFriends").innerHTML = friendOptionsHTML;
+        }
+
+        // Function to toggle custom tax input field
+        function toggleCustomTax() {
+            var taxSelect = document.getElementById("tax");
+            var customTaxInput = document.getElementById("customTax");
+            if (taxSelect.value === "custom") {
+                customTaxInput.style.display = "block";
+                customTaxInput.required = true;
+            } else {
+                customTaxInput.style.display = "none";
+                customTaxInput.required = false;
+            }
+        }
+
+        // Array to hold item details
         var items = [];
 
+        // Function to add a new item
         function addNewItem() {
             // Retrieve item details from the form
-            var itemName = document.getElementById("itemName").value;
+            var itemName = document.getElementById("itemName").value || "Unnamed Item";
             var itemPrice = document.getElementById("itemPrice").value;
             var tax = document.getElementById("tax").value;
-            var includedFriends = document.getElementById("includedFriends").value;
+            if (tax === "custom") {
+                tax = document.getElementById("customTax").value;
+            }
+            var includedFriends = Array.from(document.getElementById("includedFriends").selectedOptions).map(option => option.value);
 
-            // Create an object to represent the item
-            var newItem = {
-                itemName: itemName,
-                itemPrice: itemPrice,
-                tax: tax,
-                includedFriends: includedFriends
+            // Store item details in the array
+            var itemDetails = {
+                name: itemName,
+                price: parseFloat(itemPrice),
+                tax: parseFloat(tax),
+                friends: includedFriends
             };
-
-            // Add the new item to the items array
-            items.push(newItem);
+            items.push(itemDetails);
 
             // Clear the form fields for the next item
             document.getElementById("itemName").value = "";
             document.getElementById("itemPrice").value = "";
             document.getElementById("tax").value = "2"; // Reset tax to default
-            document.getElementById("includedFriends").value = "";
-
-            // Optional: Display a message or perform other actions
+            document.getElementById("customTax").value = "";
+            document.getElementById("customTax").style.display = "none";
         }
 
+        // Function to calculate split
         function calculateSplit() {
-            // Add functionality to calculate split using the items array
-            console.log(items); // Example: Log the items array to the console
+            // Add functionality to calculate split
+        }
+
+        // Call the function to generate friend options on page load
+        window.onload = function() {
+            generateFriendOptions();
+        };
+
+        // Function to open a new window and display the item list
+        function openItemListWindow() {
+            var newWindow = window.open("", "_blank");
+            newWindow.document.write("<html><head><title>Entered Items</title></head><body><h1>Entered Items</h1><div id='itemList'></div></body></html>");
+            newWindow.document.close();
+            var itemList = newWindow.document.getElementById("itemList");
+            items.forEach(item => {
+                var itemDetails = "Name: " + item.name + ", Price: " + item.price + ", Tax: " + item.tax + "%, Included Friends: " + item.friends.join(", ");
+                var newItem = newWindow.document.createElement("div");
+                newItem.textContent = itemDetails;
+                itemList.appendChild(newItem);
+            });
+        }
+
+        function redirectToIndex() {
+            window.location.href = "index.html";
         }
     </script>
 </body>
